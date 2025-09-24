@@ -1,0 +1,340 @@
+@page "/cart"
+@rendermode InteractiveServer
+
+<PageTitle>Shopping Cart - DRESSHY</PageTitle>
+
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 fw-bold text-center mb-3">Shopping Cart</h1>
+            <p class="lead text-center text-muted">Review your selected items before checkout</p>
+        </div>
+    </div>
+
+    @if (cartItems.Any())
+    {
+        <div class="row">
+            <!-- Cart Items -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Cart Items (@cartItems.Count)</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @foreach (var item in cartItems)
+                        {
+                            <div class="cart-item p-3">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2">
+                                        <img src="@item.Product.ImageUrl" class="cart-item-image" alt="@item.Product.Name">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="mb-1">@item.Product.Name</h6>
+                                        <p class="text-muted mb-1">@item.Product.Category</p>
+                                        @if (item.Product.IsOnSale)
+                                        {
+                                            <span class="badge bg-danger">SALE</span>
+                                        }
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="d-flex align-items-center">
+                                            <button class="btn btn-outline-secondary btn-sm" @onclick="() => UpdateQuantity(item.Product.Id, item.Quantity - 1)">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <input type="number" class="form-control quantity-input mx-2" value="@item.Quantity" min="1" max="@item.Product.Stock" @onchange="@((e) => UpdateQuantity(item.Product.Id, int.Parse(e.Value?.ToString() ?? "1")))">
+                                            <button class="btn btn-outline-secondary btn-sm" @onclick="() => UpdateQuantity(item.Product.Id, item.Quantity + 1)" disabled="@(item.Quantity >= item.Product.Stock)">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">@item.Product.Stock available</small>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        @if (item.Product.IsOnSale)
+                                        {
+                                            <div class="product-original-price">$@item.Product.OriginalPrice.ToString("F2")</div>
+                                        }
+                                        <div class="product-price">$@item.Product.Price.ToString("F2")</div>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <div class="fw-bold">$@((item.Product.Price * item.Quantity).ToString("F2"))</div>
+                                        <button class="btn btn-outline-danger btn-sm mt-2" @onclick="() => RemoveFromCart(item.Product.Id)">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Continue Shopping -->
+                <div class="mt-3">
+                    <a href="/products" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                    </a>
+                    <button class="btn btn-outline-secondary ms-2" @onclick="ClearCart">
+                        <i class="fas fa-trash me-2"></i>Clear Cart
+                    </button>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal (@totalItems items):</span>
+                            <span>$@subtotal.ToString("F2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <span class="text-success">@(subtotal >= 100 ? "FREE" : "$9.99")</span>
+                        </div>
+                        @if (totalSavings > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>You Save:</span>
+                                <span>-$@totalSavings.ToString("F2")</span>
+                            </div>
+                        }
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Total:</strong>
+                            <strong class="text-primary">$@total.ToString("F2")</strong>
+                        </div>
+
+                        @if (subtotal >= 100)
+                        {
+                            <div class="alert alert-success">
+                                <i class="fas fa-truck me-2"></i>You qualify for FREE shipping!
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>Add $@((100 - subtotal).ToString("F2")) more for FREE shipping
+                            </div>
+                        }
+
+                        <!-- Promo Code -->
+                        <div class="mb-3">
+                            <label class="form-label">Promo Code</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Enter code" @bind="promoCode">
+                                <button class="btn btn-outline-secondary" @onclick="ApplyPromoCode">Apply</button>
+                            </div>
+                        </div>
+
+                        <!-- Checkout Button -->
+                        <button class="btn btn-primary w-100 btn-lg" @onclick="ProceedToCheckout">
+                            <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                        </button>
+
+                        <!-- Security Info -->
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-lock me-1"></i>Secure checkout with SSL encryption
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommended Products -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-heart me-2"></i>You might also like</h6>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var product in recommendedProducts.Take(2))
+                        {
+                            <div class="d-flex mb-3">
+                                <img src="@product.ImageUrl" class="me-3" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" alt="@product.Name">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">@product.Name</h6>
+                                    <div class="product-price">$@product.Price.ToString("F2")</div>
+                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => AddRecommendedToCart(product.Id)">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Empty Cart -->
+        <div class="row">
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-cart fa-4x text-muted mb-4"></i>
+                    <h3>Your cart is empty</h3>
+                    <p class="text-muted mb-4">Looks like you haven't added any items to your cart yet.</p>
+                    <a href="/products" class="btn btn-primary btn-lg">
+                        <i class="fas fa-shopping-bag me-2"></i>Start Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string promoCode = "";
+    private List<CartItem> cartItems = new List<CartItem>();
+    private List<Product> recommendedProducts = new List<Product>();
+
+    private decimal subtotal => cartItems.Sum(item => item.Product.Price * item.Quantity);
+    private decimal totalSavings => cartItems.Where(item => item.Product.IsOnSale).Sum(item => (item.Product.OriginalPrice - item.Product.Price) * item.Quantity);
+    private decimal shipping => subtotal >= 100 ? 0 : 9.99m;
+    private decimal total => subtotal + shipping;
+    private int totalItems => cartItems.Sum(item => item.Quantity);
+
+    protected override void OnInitialized()
+    {
+        LoadCartItems();
+        LoadRecommendedProducts();
+    }
+
+    private void LoadCartItems()
+    {
+        // Simulated cart data - in real app this would come from a service
+        cartItems = new List<CartItem>
+        {
+            new CartItem
+            {
+                Product = new Product
+                {
+                    Id = 1,
+                    Name = "Elegant Summer Dress",
+                    Description = "Perfect for any occasion with its flowing design and comfortable fabric.",
+                    Price = 89.99m,
+                    OriginalPrice = 129.99m,
+                    ImageUrl = "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+                    IsOnSale = true,
+                    Category = "women",
+                    Stock = 15
+                },
+                Quantity = 1
+            },
+            new CartItem
+            {
+                Product = new Product
+                {
+                    Id = 3,
+                    Name = "Premium Leather Handbag",
+                    Description = "Crafted from genuine leather with attention to every detail.",
+                    Price = 199.99m,
+                    ImageUrl = "https://images.unsplash.com/photo-1584917865442-de89df76afd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+                    Category = "accessories",
+                    Stock = 12
+                },
+                Quantity = 1
+            },
+            new CartItem
+            {
+                Product = new Product
+                {
+                    Id = 4,
+                    Name = "Casual Cotton T-Shirt",
+                    Description = "Soft, breathable cotton in a relaxed fit for everyday comfort.",
+                    Price = 24.99m,
+                    OriginalPrice = 34.99m,
+                    ImageUrl = "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+                    IsOnSale = true,
+                    Category = "men",
+                    Stock = 25
+                },
+                Quantity = 2
+            }
+        };
+    }
+
+    private void LoadRecommendedProducts()
+    {
+        recommendedProducts = new List<Product>
+        {
+            new Product
+            {
+                Id = 5,
+                Name = "Designer Sunglasses",
+                Price = 149.99m,
+                ImageUrl = "https://images.unsplash.com/photo-1572635196237-14b3f281503f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+                Stock = 6
+            },
+            new Product
+            {
+                Id = 8,
+                Name = "Silk Scarf",
+                Price = 59.99m,
+                ImageUrl = "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+                Stock = 10
+            }
+        };
+    }
+
+    private void UpdateQuantity(int productId, int newQuantity)
+    {
+        var item = cartItems.FirstOrDefault(i => i.Product.Id == productId);
+        if (item != null && newQuantity > 0 && newQuantity <= item.Product.Stock)
+        {
+            item.Quantity = newQuantity;
+        }
+    }
+
+    private void RemoveFromCart(int productId)
+    {
+        cartItems.RemoveAll(i => i.Product.Id == productId);
+    }
+
+    private void ClearCart()
+    {
+        cartItems.Clear();
+    }
+
+    private void ApplyPromoCode()
+    {
+        if (!string.IsNullOrWhiteSpace(promoCode))
+        {
+            // TODO: Implement promo code logic
+            Console.WriteLine($"Applied promo code: {promoCode}");
+        }
+    }
+
+    private void ProceedToCheckout()
+    {
+        // TODO: Navigate to checkout page
+        Console.WriteLine("Proceeding to checkout");
+    }
+
+    private void AddRecommendedToCart(int productId)
+    {
+        // TODO: Add recommended product to cart
+        Console.WriteLine($"Added recommended product {productId} to cart");
+    }
+
+    public class CartItem
+    {
+        public Product Product { get; set; } = new Product();
+        public int Quantity { get; set; }
+    }
+
+    public class Product
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public decimal Price { get; set; }
+        public decimal OriginalPrice { get; set; }
+        public string ImageUrl { get; set; } = "";
+        public bool IsOnSale { get; set; }
+        public string Category { get; set; } = "";
+        public int Stock { get; set; }
+    }
+}

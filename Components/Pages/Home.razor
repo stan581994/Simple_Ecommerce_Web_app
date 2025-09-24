@@ -1,0 +1,248 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+<PageTitle>DRESSHY - Fashion Forward Clothing</PageTitle>
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <h1 class="hero-title">Welcome to DRESSHY</h1>
+                <p class="hero-subtitle">Discover the latest trends in fashion with our curated collection of premium clothing and accessories</p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="/products" class="btn btn-primary btn-lg">Shop Now</a>
+                    <a href="/categories" class="btn btn-outline-light btn-lg">Browse Categories</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Categories -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-5 fw-bold mb-3">Shop by Category</h2>
+                <p class="lead text-muted">Explore our diverse collection of fashion essentials</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <a href="/products?category=women" class="category-card d-block" style="background-image: url('https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                    <div class="category-overlay">
+                        <span>Women's Fashion</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/products?category=men" class="category-card d-block" style="background-image: url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                    <div class="category-overlay">
+                        <span>Men's Fashion</span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/products?category=accessories" class="category-card d-block" style="background-image: url('https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                    <div class="category-overlay">
+                        <span>Accessories</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-5 fw-bold mb-3">Featured Products</h2>
+                <p class="lead text-muted">Handpicked items from our latest collection</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            @foreach (var product in featuredProducts)
+            {
+                <div class="col-lg-3 col-md-6">
+                    <div class="card product-card h-100">
+                        @if (product.IsOnSale)
+                        {
+                            <div class="badge-sale">SALE</div>
+                        }
+                        @if (product.IsNew)
+                        {
+                            <div class="badge-new">NEW</div>
+                        }
+                        <img src="@product.ImageUrl" class="card-img-top product-image" alt="@product.Name">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title product-title">@product.Name</h5>
+                            <p class="card-text text-muted flex-grow-1">@product.Description</p>
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <div>
+                                    @if (product.IsOnSale)
+                                    {
+                                        <span class="product-original-price">$@product.OriginalPrice.ToString("F2")</span>
+                                    }
+                                    <span class="product-price">$@product.Price.ToString("F2")</span>
+                                </div>
+                                <button class="btn btn-primary btn-sm" @onclick="() => AddToCart(product.Id)">
+                                    <i class="fas fa-cart-plus me-1"></i>Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <a href="/products" class="btn btn-outline-primary btn-lg">View All Products</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 mx-auto text-center text-white">
+                <h3 class="fw-bold mb-3">Stay in Style</h3>
+                <p class="mb-4">Subscribe to our newsletter and be the first to know about new arrivals, exclusive offers, and fashion tips.</p>
+                <div class="row g-2">
+                    <div class="col-md-8">
+                        <input type="email" class="form-control form-control-lg" placeholder="Enter your email address" @bind="newsletterEmail">
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-light btn-lg w-100" @onclick="SubscribeNewsletter">
+                            Subscribe
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private string newsletterEmail = "";
+    
+    private List<Product> featuredProducts = new List<Product>
+    {
+        new Product
+        {
+            Id = 1,
+            Name = "Elegant Summer Dress",
+            Description = "Perfect for any occasion with its flowing design and comfortable fabric.",
+            Price = 89.99m,
+            OriginalPrice = 129.99m,
+            ImageUrl = "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            IsOnSale = true,
+            IsNew = false
+        },
+        new Product
+        {
+            Id = 2,
+            Name = "Classic Denim Jacket",
+            Description = "Timeless style meets modern comfort in this versatile denim jacket.",
+            Price = 79.99m,
+            ImageUrl = "https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            IsOnSale = false,
+            IsNew = true
+        },
+        new Product
+        {
+            Id = 3,
+            Name = "Premium Leather Handbag",
+            Description = "Crafted from genuine leather with attention to every detail.",
+            Price = 199.99m,
+            ImageUrl = "https://images.unsplash.com/photo-1584917865442-de89df76afd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            IsOnSale = false,
+            IsNew = false
+        },
+        new Product
+        {
+            Id = 4,
+            Name = "Casual Cotton T-Shirt",
+            Description = "Soft, breathable cotton in a relaxed fit for everyday comfort.",
+            Price = 24.99m,
+            OriginalPrice = 34.99m,
+            ImageUrl = "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            IsOnSale = true,
+            IsNew = false
+        },
+        new Product
+        {
+            Id = 5,
+            Name = "Designer Sunglasses",
+            Description = "UV protection meets style in these trendy designer frames.",
+            Price = 149.99m,
+            ImageUrl = "https://images.unsplash.com/photo-1572635196237-14b3f281503f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            IsOnSale = false,
+            IsNew = true
+        },
+        new Product
+        {
+            Id = 6,
+            Name = "Cozy Knit Sweater",
+            Description = "Stay warm and stylish with this soft, comfortable knit sweater.",
+            Price = 69.99m,
+            ImageUrl = "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            IsOnSale = false,
+            IsNew = false
+        },
+        new Product
+        {
+            Id = 7,
+            Name = "Athletic Sneakers",
+            Description = "Performance meets style in these comfortable athletic shoes.",
+            Price = 119.99m,
+            OriginalPrice = 159.99m,
+            ImageUrl = "https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            IsOnSale = true,
+            IsNew = false
+        },
+        new Product
+        {
+            Id = 8,
+            Name = "Silk Scarf",
+            Description = "Add elegance to any outfit with this luxurious silk scarf.",
+            Price = 59.99m,
+            ImageUrl = "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+            IsOnSale = false,
+            IsNew = true
+        }
+    };
+
+    private void AddToCart(int productId)
+    {
+        // TODO: Implement add to cart functionality
+        // For now, just show a simple alert
+        Console.WriteLine($"Added product {productId} to cart");
+    }
+
+    private void SubscribeNewsletter()
+    {
+        if (!string.IsNullOrWhiteSpace(newsletterEmail))
+        {
+            // TODO: Implement newsletter subscription
+            Console.WriteLine($"Subscribed email: {newsletterEmail}");
+            newsletterEmail = "";
+        }
+    }
+
+    public class Product
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public decimal Price { get; set; }
+        public decimal OriginalPrice { get; set; }
+        public string ImageUrl { get; set; } = "";
+        public bool IsOnSale { get; set; }
+        public bool IsNew { get; set; }
+    }
+}

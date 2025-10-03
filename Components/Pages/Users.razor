@@ -1,0 +1,70 @@
+@page "/users"
+@using Simple_Ecommerce_Web_app.Data
+@using Simple_Ecommerce_Web_app.Models
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext DbContext
+@rendermode InteractiveServer
+
+<PageTitle>Users</PageTitle>
+
+<h1>User Accounts</h1>
+
+<p>This page displays all user accounts with their roles and permissions.</p>
+
+@if (users == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Can Add Products</th>
+                <th>Can Edit Prices</th>
+                <th>Can View Products</th>
+                <th>Can Add to Cart</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.Username</td>
+                    <td>@user.Email</td>
+                    <td><strong>@user.Role.Name</strong></td>
+                    <td>@(user.Role.CanAddProducts ? "✓" : "✗")</td>
+                    <td>@(user.Role.CanEditPrices ? "✓" : "✗")</td>
+                    <td>@(user.Role.CanViewProducts ? "✓" : "✗")</td>
+                    <td>@(user.Role.CanAddToCart ? "✓" : "✗")</td>
+                    <td>@user.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="alert alert-info mt-4">
+        <h4>Test Credentials:</h4>
+        <ul>
+            <li><strong>Admin:</strong> Username: <code>admin</code>, Password: <code>admin123</code></li>
+            <li><strong>Customer:</strong> Username: <code>customer</code>, Password: <code>customer123</code></li>
+        </ul>
+    </div>
+}
+
+@code {
+    private List<User>? users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await DbContext.Users
+            .Include(u => u.Role)
+            .ToListAsync();
+    }
+}

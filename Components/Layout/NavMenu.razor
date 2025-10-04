@@ -1,6 +1,8 @@
 ﻿@using Simple_Ecommerce_Web_app.Services
+@using Microsoft.JSInterop
 @inject AuthService AuthService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 @implements IDisposable
 
 <div class="top-row ps-3 navbar navbar-dark">
@@ -8,8 +10,11 @@
         <a class="navbar-brand" href="">Simple_Ecommerce_Web_app</a>
         @if (AuthService.IsAuthenticated)
         {
-            <div class="dropdown">
-                <button class="btn btn-link text-white text-decoration-none dropdown-toggle" type="button" id="userDropdown" @onclick="ToggleDropdown" @onclick:stopPropagation="true">
+            <div class="dropdown user-dropdown" @ref="dropdownRef">
+                <button class="btn btn-link text-white text-decoration-none dropdown-toggle" 
+                        type="button" 
+                        id="userDropdown" 
+                        @onclick="ToggleDropdown">
                     <span class="bi bi-person-circle me-1"></span>
                     @AuthService.CurrentUser?.Username
                     @if (AuthService.IsAdmin)
@@ -19,9 +24,11 @@
                 </button>
                 @if (showDropdown)
                 {
-                    <ul class="dropdown-menu dropdown-menu-end show" style="position: absolute; right: 0; z-index: 1000;">
+                    <ul class="dropdown-menu dropdown-menu-end show" 
+                        style="position: absolute; right: 0; top: 100%; z-index: 1050; margin-top: 0.125rem;"
+                        @onclick:stopPropagation="true">
                         <li>
-                            <a class="dropdown-item" href="/profile" @onclick="() => showDropdown = false">
+                            <a class="dropdown-item" href="/profile" @onclick="CloseDropdown">
                                 <span class="bi bi-person me-2"></span>Profile
                             </a>
                         </li>
@@ -65,39 +72,63 @@
                 <span class="bi bi-people-nav-menu" aria-hidden="true"></span> Users
             </NavLink>
         </div>
-
-        <hr />
-
-        @if (AuthService.IsAuthenticated)
-        {
-            <div class="nav-item px-3">
-                <button class="nav-link btn btn-link" @onclick="HandleLogout">
-                    <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
-                </button>
-            </div>
-        }
-        else
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="login">
-                    <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Login
-                </NavLink>
-            </div>
-        }
     </nav>
 </div>
 
 @code {
     private bool showDropdown = false;
+    private ElementReference dropdownRef;
+    private DotNetObjectReference<NavMenu>? dotNetHelper;
 
     protected override void OnInitialized()
     {
         AuthService.OnAuthStateChanged += StateHasChanged;
+        dotNetHelper = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (showDropdown && dotNetHelper != null)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("dropdownHelper.initialize", dotNetHelper, dropdownRef);
+            }
+            catch (Exception)
+            {
+                // Handle JS interop errors silently
+            }
+        }
+        else if (!showDropdown)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("dropdownHelper.dispose", dropdownRef);
+            }
+            catch (Exception)
+            {
+                // Handle JS interop errors silently
+            }
+        }
     }
 
     private void ToggleDropdown()
     {
         showDropdown = !showDropdown;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void CloseDropdownFromJS()
+    {
+        showDropdown = false;
+        StateHasChanged();
+    }
+
+    private void CloseDropdown()
+    {
+        showDropdown = false;
+        StateHasChanged();
     }
 
     private void HandleLogout()
@@ -110,5 +141,6 @@
     public void Dispose()
     {
         AuthService.OnAuthStateChanged -= StateHasChanged;
+        dotNetHelper?.Dispose();
     }
 }

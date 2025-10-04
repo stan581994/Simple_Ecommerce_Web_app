@@ -1,0 +1,109 @@
+@using Simple_Ecommerce_Web_app.Services
+@using Microsoft.JSInterop
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+@rendermode InteractiveServer
+
+<div class="nav-item dropdown user-dropdown" @ref="dropdownRef">
+    <button class="nav-link dropdown-toggle btn btn-link text-white text-decoration-none" 
+            type="button" 
+            id="userDropdown" 
+            @onclick="ToggleUserDropdown">
+        <i class="fas fa-user me-1"></i>
+        @AuthService.CurrentUser?.Username
+        @if (AuthService.IsAdmin)
+        {
+            <span class="badge bg-warning text-dark ms-1">Admin</span>
+        }
+    </button>
+    @if (showUserDropdown)
+    {
+        <ul class="dropdown-menu dropdown-menu-end show" 
+            style="position: absolute; right: 0; z-index: 1050;" 
+            @onclick:stopPropagation="true">
+            <li>
+                <a class="dropdown-item" href="/profile" @onclick="CloseDropdown">
+                    <i class="fas fa-user me-2"></i>Profile
+                </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <button class="dropdown-item" type="button" @onclick="HandleLogout">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+            </li>
+        </ul>
+    }
+</div>
+
+@code {
+    private bool showUserDropdown = false;
+    private ElementReference dropdownRef;
+    private DotNetObjectReference<UserDropdown>? dotNetHelper;
+
+    protected override void OnInitialized()
+    {
+        AuthService.OnAuthStateChanged += StateHasChanged;
+        dotNetHelper = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (showUserDropdown && dotNetHelper != null)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("dropdownHelper.initialize", dotNetHelper, dropdownRef);
+            }
+            catch (Exception)
+            {
+                // Handle JS interop errors silently
+            }
+        }
+        else if (!showUserDropdown)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("dropdownHelper.dispose", dropdownRef);
+            }
+            catch (Exception)
+            {
+                // Handle JS interop errors silently
+            }
+        }
+    }
+
+    private void ToggleUserDropdown()
+    {
+        showUserDropdown = !showUserDropdown;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void CloseDropdownFromJS()
+    {
+        showUserDropdown = false;
+        StateHasChanged();
+    }
+
+    private void CloseDropdown()
+    {
+        showUserDropdown = false;
+        StateHasChanged();
+    }
+
+    private void HandleLogout()
+    {
+        showUserDropdown = false;
+        AuthService.Logout();
+        Navigation.NavigateTo("/login");
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthStateChanged -= StateHasChanged;
+        dotNetHelper?.Dispose();
+    }
+}

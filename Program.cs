@@ -16,6 +16,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Add Authentication Service as Singleton
 builder.Services.AddSingleton<AuthService>();
 
+// Add Product Service as Scoped
+builder.Services.AddScoped<ProductService>();
+
+// Add Category Service as Scoped
+builder.Services.AddScoped<CategoryService>();
+
 var app = builder.Build();
 
 // Ensure database is created and migrations are applied

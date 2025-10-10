@@ -1,7 +1,32 @@
 ﻿@page "/"
 @rendermode InteractiveServer
+@inject AuthService AuthService
 
 <PageTitle>DRESSHY - Fashion Forward Clothing</PageTitle>
+
+@if (AuthService.IsAuthenticated && AuthService.IsAdmin)
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="alert-heading mb-2">
+                        <i class="bi bi-shield-check me-2"></i>Admin Dashboard
+                    </h5>
+                    <p class="mb-0">You're logged in as an administrator. Quick access to management tools:</p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <a href="/admin/products" class="btn btn-primary btn-sm me-2">
+                        <i class="bi bi-box-seam me-1"></i>Manage Products
+                    </a>
+                    <a href="/admin/categories" class="btn btn-success btn-sm">
+                        <i class="bi bi-tags-fill me-1"></i>Manage Categories
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <!-- Hero Section -->
 <section class="hero-section">

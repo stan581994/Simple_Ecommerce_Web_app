@@ -68,10 +68,36 @@
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="users">
-                <span class="bi bi-people-nav-menu" aria-hidden="true"></span> Users
+            <NavLink class="nav-link" href="products">
+                <span class="bi bi-bag-fill" aria-hidden="true"></span> Products
             </NavLink>
         </div>
+
+        @if (AuthService.IsAuthenticated && AuthService.IsAdmin)
+        {
+            <div class="nav-item px-3">
+                <hr class="my-2" />
+                <div class="text-muted small px-3 mb-2">ADMIN PANEL</div>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="admin/products">
+                    <span class="bi bi-box-seam" aria-hidden="true"></span> Manage Products
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="admin/categories">
+                    <span class="bi bi-tags-fill" aria-hidden="true"></span> Manage Categories
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="users">
+                    <span class="bi bi-people-nav-menu" aria-hidden="true"></span> Manage Users
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
 

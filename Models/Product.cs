@@ -15,6 +15,12 @@ namespace Simple_Ecommerce_Web_app.Models
         [Required]
         public decimal Price { get; set; }
 
+        public decimal OriginalPrice { get; set; }
+
+        public bool IsOnSale { get; set; }
+
+        public bool IsNew { get; set; }
+
         [Required]
         public string ImageUrl { get; set; } = string.Empty;
 

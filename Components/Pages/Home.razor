@@ -4,6 +4,7 @@
 @inject CartService CartService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject ProductService ProductService
 
 <PageTitle>DRESSHY - Fashion Forward Clothing</PageTitle>
 
@@ -157,93 +158,13 @@
 
 @code {
     private string newsletterEmail = "";
-    
-    private List<Product> featuredProducts = new List<Product>
+    private List<Models.Product> featuredProducts = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        new Product
-        {
-            Id = 1,
-            Name = "Elegant Summer Dress",
-            Description = "Perfect for any occasion with its flowing design and comfortable fabric.",
-            Price = 89.99m,
-            OriginalPrice = 129.99m,
-            ImageUrl = "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            IsOnSale = true,
-            IsNew = false
-        },
-        new Product
-        {
-            Id = 2,
-            Name = "Classic Denim Jacket",
-            Description = "Timeless style meets modern comfort in this versatile denim jacket.",
-            Price = 79.99m,
-            ImageUrl = "https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            IsOnSale = false,
-            IsNew = true
-        },
-        new Product
-        {
-            Id = 3,
-            Name = "Premium Leather Handbag",
-            Description = "Crafted from genuine leather with attention to every detail.",
-            Price = 199.99m,
-            ImageUrl = "https://images.unsplash.com/photo-1584917865442-de89df76afd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            IsOnSale = false,
-            IsNew = false
-        },
-        new Product
-        {
-            Id = 4,
-            Name = "Casual Cotton T-Shirt",
-            Description = "Soft, breathable cotton in a relaxed fit for everyday comfort.",
-            Price = 24.99m,
-            OriginalPrice = 34.99m,
-            ImageUrl = "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            IsOnSale = true,
-            IsNew = false
-        },
-        new Product
-        {
-            Id = 5,
-            Name = "Designer Sunglasses",
-            Description = "UV protection meets style in these trendy designer frames.",
-            Price = 149.99m,
-            ImageUrl = "https://images.unsplash.com/photo-1572635196237-14b3f281503f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            IsOnSale = false,
-            IsNew = true
-        },
-        new Product
-        {
-            Id = 6,
-            Name = "Cozy Knit Sweater",
-            Description = "Stay warm and stylish with this soft, comfortable knit sweater.",
-            Price = 69.99m,
-            ImageUrl = "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            IsOnSale = false,
-            IsNew = false
-        },
-        new Product
-        {
-            Id = 7,
-            Name = "Athletic Sneakers",
-            Description = "Performance meets style in these comfortable athletic shoes.",
-            Price = 119.99m,
-            OriginalPrice = 159.99m,
-            ImageUrl = "https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            IsOnSale = true,
-            IsNew = false
-        },
-        new Product
-        {
-            Id = 8,
-            Name = "Silk Scarf",
-            Description = "Add elegance to any outfit with this luxurious silk scarf.",
-            Price = 59.99m,
-            ImageUrl = "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            IsOnSale = false,
-            IsNew = true
-        }
-    };
+        var allProducts = await ProductService.GetAllProductsAsync();
+        featuredProducts = allProducts.Take(8).ToList();
+    }
 
     private async Task AddToCart(int productId)
     {

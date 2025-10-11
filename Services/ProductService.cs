@@ -61,10 +61,22 @@ namespace Simple_Ecommerce_Web_app.Services
 
         public async Task<Product> UpdateProductAsync(Product product)
         {
-            product.UpdatedAt = DateTime.UtcNow;
-            _context.Products.Update(product);
+            var existingProduct = await _context.Products.FindAsync(product.Id);
+            if (existingProduct == null)
+                throw new Exception("Product not found");
+
+            existingProduct.Name = product.Name;
+            existingProduct.Description = product.Description;
+            existingProduct.Price = product.Price;
+            existingProduct.OriginalPrice = product.OriginalPrice;
+            existingProduct.IsOnSale = product.IsOnSale;
+            existingProduct.IsNew = product.IsNew;
+            existingProduct.ImageUrl = product.ImageUrl;
+            existingProduct.CategoryId = product.CategoryId;
+            existingProduct.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
-            return product;
+            return existingProduct;
         }
 
         public async Task<bool> DeleteProductAsync(int id)

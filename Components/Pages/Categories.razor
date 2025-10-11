@@ -1,0 +1,80 @@
+@page "/categories"
+@rendermode InteractiveServer
+
+<PageTitle>Categories - DRESSHY</PageTitle>
+
+<div class="container py-5">
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 fw-bold mb-3">Shop by Category</h1>
+            <p class="lead text-muted">Browse our curated collections</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+            <a href="/products?category=women" class="text-decoration-none">
+                <div class="card category-card-large h-100">
+                    <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="card-img-top" alt="Women's Fashion">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">Women's Fashion</h3>
+                        <p class="card-text text-muted">Elegant dresses, tops, and more</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <a href="/products?category=men" class="text-decoration-none">
+                <div class="card category-card-large h-100">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="card-img-top" alt="Men's Fashion">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">Men's Fashion</h3>
+                        <p class="card-text text-muted">Stylish suits, shirts, and casual wear</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <a href="/products?category=accessories" class="text-decoration-none">
+                <div class="card category-card-large h-100">
+                    <img src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="card-img-top" alt="Accessories">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">Accessories</h3>
+                        <p class="card-text text-muted">Bags, watches, and jewelry</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <a href="/products?category=shoes" class="text-decoration-none">
+                <div class="card category-card-large h-100">
+                    <img src="https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" class="card-img-top" alt="Shoes">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">Shoes</h3>
+                        <p class="card-text text-muted">Sneakers, boots, and formal shoes</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .category-card-large {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: pointer;
+    }
+
+    .category-card-large:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .category-card-large img {
+        height: 300px;
+        object-fit: cover;
+    }
+</style>

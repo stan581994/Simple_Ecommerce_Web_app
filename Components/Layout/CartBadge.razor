@@ -1,0 +1,52 @@
+@rendermode InteractiveServer
+@using Simple_Ecommerce_Web_app.Services
+@inject CartService CartService
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<a class="nav-link position-relative" href="/cart">
+    <i class="fas fa-shopping-cart"></i>
+    @if (cartCount > 0)
+    {
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            @cartCount
+        </span>
+    }
+</a>
+
+@code {
+    private int cartCount = 0;
+
+    protected override void OnInitialized()
+    {
+        CartService.OnCartChanged += UpdateCartCount;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await Task.Delay(100);
+                cartCount = await JSRuntime.InvokeAsync<int>("cartManager.getCartCount");
+                StateHasChanged();
+            }
+            catch
+            {
+                cartCount = 0;
+            }
+        }
+    }
+
+    private void UpdateCartCount()
+    {
+        cartCount = CartService.CartItemCount;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        CartService.OnCartChanged -= UpdateCartCount;
+    }
+}

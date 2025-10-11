@@ -1,5 +1,8 @@
 @page "/products"
 @rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
+@inject CartService CartService
+@inject NavigationManager Navigation
 
 <PageTitle>Products - DRESSHY</PageTitle>
 
@@ -122,14 +125,9 @@
                                             }
                                             <span class="product-price">$@product.Price.ToString("F2")</span>
                                         </div>
-                                        <div class="btn-group">
-                                            <button class="btn btn-outline-primary btn-sm" @onclick="() => ViewProduct(product.Id)">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="btn btn-primary btn-sm" @onclick="() => AddToCart(product.Id)" disabled="@(product.Stock == 0)">
-                                                <i class="fas fa-cart-plus"></i>
-                                            </button>
-                                        </div>
+                                        <button class="btn btn-primary btn-sm" @onclick="() => AddToCart(product.Id)" disabled="@(product.Stock == 0)">
+                                            <i class="fas fa-cart-plus me-1"></i>Add to Cart
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -280,10 +278,51 @@
         Console.WriteLine($"Viewing product {productId}");
     }
 
-    private void AddToCart(int productId)
+    private async Task AddToCart(int productId)
     {
-        // TODO: Implement add to cart functionality
-        Console.WriteLine($"Added product {productId} to cart");
+        var product = filteredProducts.FirstOrDefault(p => p.Id == productId);
+        if (product != null && product.Stock > 0)
+        {
+            try
+            {
+                // Show confirmation dialog
+                var confirmed = await JSRuntime.InvokeAsync<bool>("confirmDialog", 
+                    $"Are you sure you want to add '{product.Name}' to your cart?");
+                
+                if (!confirmed)
+                {
+                    return;
+                }
+                
+                var cartProduct = new
+                {
+                    id = product.Id,
+                    name = product.Name,
+                    description = product.Description,
+                    price = (double)product.Price,
+                    originalPrice = (double)(product.OriginalPrice > 0 ? product.OriginalPrice : product.Price),
+                    imageUrl = product.ImageUrl,
+                    isOnSale = product.IsOnSale,
+                    category = product.Category,
+                    stock = product.Stock
+                };
+                
+                // Call JavaScript directly to add to cart
+                await JSRuntime.InvokeAsync<int>("cartManager.addToCart", cartProduct);
+                
+                // Get the actual cart item count (total quantity)
+                var count = await JSRuntime.InvokeAsync<int>("cartManager.getCartCount");
+                
+                // Notify CartService to update the badge
+                CartService.NotifyCartChanged(count);
+                
+                Console.WriteLine($"Product added to cart. New count: {count}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error adding to cart: {ex.Message}");
+            }
+        }
     }
 
     public class Product

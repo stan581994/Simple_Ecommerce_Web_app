@@ -22,6 +22,9 @@ builder.Services.AddScoped<ProductService>();
 // Add Category Service as Scoped
 builder.Services.AddScoped<CategoryService>();
 
+// Add Cart Service as Singleton
+builder.Services.AddSingleton<CartService>();
+
 var app = builder.Build();
 
 // Ensure database is created and migrations are applied

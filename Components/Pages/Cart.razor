@@ -1,5 +1,7 @@
 @page "/cart"
 @rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
+@inject CartService CartService
 
 <PageTitle>Shopping Cart - DRESSHY</PageTitle>
 
@@ -196,64 +198,67 @@
     private decimal total => subtotal + shipping;
     private int totalItems => cartItems.Sum(item => item.Quantity);
 
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        LoadCartItems();
-        LoadRecommendedProducts();
+        if (firstRender)
+        {
+            LoadRecommendedProducts();
+            await Task.Delay(100); // Small delay to ensure JS is ready
+            await LoadCartItems();
+            StateHasChanged();
+        }
     }
 
-    private void LoadCartItems()
+    private async Task LoadCartItems()
     {
-        // Simulated cart data - in real app this would come from a service
-        cartItems = new List<CartItem>
+        try
         {
-            new CartItem
+            // Check if cartManager exists
+            var hasCartManager = await JSRuntime.InvokeAsync<bool>("eval", "typeof window.cartManager !== 'undefined'");
+            if (!hasCartManager)
             {
-                Product = new Product
-                {
-                    Id = 1,
-                    Name = "Elegant Summer Dress",
-                    Description = "Perfect for any occasion with its flowing design and comfortable fabric.",
-                    Price = 89.99m,
-                    OriginalPrice = 129.99m,
-                    ImageUrl = "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-                    IsOnSale = true,
-                    Category = "women",
-                    Stock = 15
-                },
-                Quantity = 1
-            },
-            new CartItem
-            {
-                Product = new Product
-                {
-                    Id = 3,
-                    Name = "Premium Leather Handbag",
-                    Description = "Crafted from genuine leather with attention to every detail.",
-                    Price = 199.99m,
-                    ImageUrl = "https://images.unsplash.com/photo-1584917865442-de89df76afd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-                    Category = "accessories",
-                    Stock = 12
-                },
-                Quantity = 1
-            },
-            new CartItem
-            {
-                Product = new Product
-                {
-                    Id = 4,
-                    Name = "Casual Cotton T-Shirt",
-                    Description = "Soft, breathable cotton in a relaxed fit for everyday comfort.",
-                    Price = 24.99m,
-                    OriginalPrice = 34.99m,
-                    ImageUrl = "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-                    IsOnSale = true,
-                    Category = "men",
-                    Stock = 25
-                },
-                Quantity = 2
+                Console.WriteLine("Cart manager not found!");
+                cartItems = new List<CartItem>();
+                CartService.SetCartCount(0);
+                return;
             }
-        };
+
+            var cart = await JSRuntime.InvokeAsync<List<CartItemJson>>("cartManager.getCart");
+            Console.WriteLine($"Loaded {cart?.Count ?? 0} items from cart");
+            
+            if (cart == null || cart.Count == 0)
+            {
+                cartItems = new List<CartItem>();
+                CartService.SetCartCount(0);
+                return;
+            }
+
+            cartItems = cart.Select(item => new CartItem
+            {
+                Product = new Product
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                    Description = item.Description,
+                    Price = item.Price,
+                    OriginalPrice = item.OriginalPrice,
+                    ImageUrl = item.ImageUrl,
+                    IsOnSale = item.IsOnSale,
+                    Category = item.Category,
+                    Stock = item.Stock
+                },
+                Quantity = item.Quantity
+            }).ToList();
+            
+            // Update CartService with the current count
+            var totalCount = cartItems.Sum(item => item.Quantity);
+            CartService.SetCartCount(totalCount);
+        }
+        catch
+        {
+            cartItems = new List<CartItem>();
+            CartService.SetCartCount(0);
+        }
     }
 
     private void LoadRecommendedProducts()
@@ -279,23 +284,29 @@
         };
     }
 
-    private void UpdateQuantity(int productId, int newQuantity)
+    private async Task UpdateQuantity(int productId, int newQuantity)
     {
         var item = cartItems.FirstOrDefault(i => i.Product.Id == productId);
         if (item != null && newQuantity > 0 && newQuantity <= item.Product.Stock)
         {
-            item.Quantity = newQuantity;
+            var count = await JSRuntime.InvokeAsync<int>("cartManager.updateQuantity", productId, newQuantity);
+            CartService.NotifyCartChanged(count);
+            await LoadCartItems();
         }
     }
 
-    private void RemoveFromCart(int productId)
+    private async Task RemoveFromCart(int productId)
     {
-        cartItems.RemoveAll(i => i.Product.Id == productId);
+        var count = await JSRuntime.InvokeAsync<int>("cartManager.removeFromCart", productId);
+        CartService.NotifyCartChanged(count);
+        await LoadCartItems();
     }
 
-    private void ClearCart()
+    private async Task ClearCart()
     {
-        cartItems.Clear();
+        var count = await JSRuntime.InvokeAsync<int>("cartManager.clearCart");
+        CartService.NotifyCartChanged(count);
+        await LoadCartItems();
     }
 
     private void ApplyPromoCode()
@@ -313,10 +324,42 @@
         Console.WriteLine("Proceeding to checkout");
     }
 
-    private void AddRecommendedToCart(int productId)
+    private async Task AddRecommendedToCart(int productId)
     {
-        // TODO: Add recommended product to cart
-        Console.WriteLine($"Added recommended product {productId} to cart");
+        var product = recommendedProducts.FirstOrDefault(p => p.Id == productId);
+        if (product != null)
+        {
+            var cartProduct = new
+            {
+                id = product.Id,
+                name = product.Name,
+                description = "",
+                price = (double)product.Price,
+                originalPrice = (double)product.Price,
+                imageUrl = product.ImageUrl,
+                isOnSale = false,
+                category = "recommended",
+                stock = product.Stock
+            };
+            
+            var count = await JSRuntime.InvokeAsync<int>("cartManager.addToCart", cartProduct);
+            CartService.NotifyCartChanged(count);
+            await LoadCartItems();
+        }
+    }
+
+    public class CartItemJson
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public decimal Price { get; set; }
+        public decimal OriginalPrice { get; set; }
+        public string ImageUrl { get; set; } = "";
+        public bool IsOnSale { get; set; }
+        public string Category { get; set; } = "";
+        public int Stock { get; set; }
+        public int Quantity { get; set; }
     }
 
     public class CartItem

@@ -1,6 +1,9 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 @inject AuthService AuthService
+@inject CartService CartService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <PageTitle>DRESSHY - Fashion Forward Clothing</PageTitle>
 
@@ -242,11 +245,51 @@
         }
     };
 
-    private void AddToCart(int productId)
+    private async Task AddToCart(int productId)
     {
-        // TODO: Implement add to cart functionality
-        // For now, just show a simple alert
-        Console.WriteLine($"Added product {productId} to cart");
+        var product = featuredProducts.FirstOrDefault(p => p.Id == productId);
+        if (product != null)
+        {
+            try
+            {
+                // Show confirmation dialog
+                var confirmed = await JSRuntime.InvokeAsync<bool>("confirmDialog", 
+                    $"Are you sure you want to add '{product.Name}' to your cart?");
+                
+                if (!confirmed)
+                {
+                    return;
+                }
+                
+                var cartProduct = new
+                {
+                    id = product.Id,
+                    name = product.Name,
+                    description = product.Description,
+                    price = (double)product.Price,
+                    originalPrice = (double)product.OriginalPrice,
+                    imageUrl = product.ImageUrl,
+                    isOnSale = product.IsOnSale,
+                    category = "featured",
+                    stock = 100
+                };
+                
+                // Call JavaScript directly to add to cart
+                await JSRuntime.InvokeAsync<int>("cartManager.addToCart", cartProduct);
+                
+                // Get the actual cart item count (total quantity)
+                var count = await JSRuntime.InvokeAsync<int>("cartManager.getCartCount");
+                
+                // Notify CartService to update the badge
+                CartService.NotifyCartChanged(count);
+                
+                Console.WriteLine($"Product added to cart. New count: {count}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error adding to cart: {ex.Message}");
+            }
+        }
     }
 
     private void SubscribeNewsletter()

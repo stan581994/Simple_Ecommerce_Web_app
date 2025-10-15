@@ -2,6 +2,9 @@
 @rendermode InteractiveServer
 @inject IJSRuntime JSRuntime
 @inject CartService CartService
+@inject AuthService AuthService
+@inject InventoryService InventoryService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Shopping Cart - DRESSHY</PageTitle>
 
@@ -318,10 +321,55 @@
         }
     }
 
-    private void ProceedToCheckout()
+    private async Task ProceedToCheckout()
     {
-        // TODO: Navigate to checkout page
-        Console.WriteLine("Proceeding to checkout");
+        // Check if user is authenticated
+        if (!AuthService.IsAuthenticated)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Please login first to proceed with checkout.");
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        // Check stock availability for all items
+        var stockIssues = new List<string>();
+        foreach (var item in cartItems)
+        {
+            var isAvailable = await InventoryService.CheckStockAvailabilityAsync(item.Product.Id, item.Quantity);
+            if (!isAvailable)
+            {
+                var availableStock = await InventoryService.GetStockQuantityAsync(item.Product.Id);
+                stockIssues.Add($"{item.Product.Name} - Only {availableStock} available (you requested {item.Quantity})");
+            }
+        }
+
+        if (stockIssues.Any())
+        {
+            var message = "Some items are out of stock:\n" + string.Join("\n", stockIssues);
+            await JSRuntime.InvokeVoidAsync("alert", message);
+            return;
+        }
+
+        // Reduce stock for all items
+        var checkoutSuccess = true;
+        foreach (var item in cartItems)
+        {
+            var reduced = await InventoryService.ReduceStockAsync(item.Product.Id, item.Quantity);
+            if (!reduced)
+            {
+                checkoutSuccess = false;
+                await JSRuntime.InvokeVoidAsync("alert", $"Failed to process {item.Product.Name}. Please try again.");
+                break;
+            }
+        }
+
+        if (checkoutSuccess)
+        {
+            // Clear the cart after successful checkout
+            await ClearCart();
+            await JSRuntime.InvokeVoidAsync("alert", "Checkout successful! Your order has been placed and stock has been updated.");
+            NavigationManager.NavigateTo("/products");
+        }
     }
 
     private async Task AddRecommendedToCart(int productId)
